@@ -1,0 +1,39 @@
+-- Schema for Risk Monitoring Analytics Project
+-- Synthetic dataset: creditcard_fraud_synthetic_small.csv
+-- This table stores transaction-level behavioral indicators used for risk scoring.
+
+CREATE TABLE creditcard_fraud_synthetic (
+    transaction_id BIGINT,
+    customer_id BIGINT,
+    timestamp_seconds BIGINT,               -- Unix timestamp of the transaction
+    hour_of_day TINYINT,                    -- 0–23
+    day_of_week TINYINT,                    -- 0–6
+    is_weekend TINYINT,                     -- 0 = no, 1 = yes
+    is_night TINYINT,                       -- 0 = no, 1 = yes
+    amount DECIMAL(12,2),                   -- transaction amount
+    avg_amount_30d DECIMAL(12,2),           -- customer’s 30-day average spend
+    amount_to_avg_ratio DECIMAL(12,4),      -- amount / avg_amount_30d
+    customer_age INT,
+    customer_tenure_days INT,
+    account_balance DECIMAL(14,2),
+    income_band VARCHAR(50),                -- categorical income grouping
+    merchant_category VARCHAR(100),
+    merchant_id VARCHAR(100),
+    transaction_type VARCHAR(50),           -- e.g., purchase, withdrawal, transfer
+    card_present TINYINT,                   -- 0 = no, 1 = yes
+    device_type VARCHAR(50),                -- e.g., mobile, web, POS
+    num_transactions_last_1h INT,
+    num_transactions_last_24h INT,
+    minutes_since_last_transaction INT,
+    distance_from_home_km DECIMAL(10,2),
+    distance_from_last_transaction_km DECIMAL(10,2),
+    is_foreign_transaction TINYINT,         -- 0 = domestic, 1 = foreign
+    ip_address_risk_score DECIMAL(5,2),     -- synthetic risk score
+    failed_pin_attempts_24h INT,
+    is_fraud TINYINT                        -- 0 = legitimate, 1 = fraud
+);
+
+-- Notes:
+-- - All data is synthetic and used only for portfolio learning.
+-- - Adjust data types if needed based on MySQL import behavior.
+-- - This schema supports risk scoring, behavioral analysis, and fraud pattern detection.
