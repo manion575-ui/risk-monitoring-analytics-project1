@@ -75,3 +75,46 @@ FROM creditcard_fraud_synthetic
 GROUP BY
     is_fraud;
 
+-- Q8: Are foreign transactions more likely to be fraudulent?
+-- Goal: Measure fraud prevalence in foreign vs domestic transactions.
+
+SELECT
+    is_foreign_transaction,
+    COUNT(*) AS total_transactions,
+    SUM(is_fraud) AS fraud_transactions,
+    SUM(is_fraud) / COUNT(*) AS pct_fraud
+FROM creditcard_fraud_synthetic
+GROUP BY
+    is_foreign_transaction;
+
+-- Q9: Which merchant categories have the highest fraud counts?
+-- Goal: Identify fraud-prone merchant categories.
+
+SELECT
+    merchant_category,
+    COUNT(*) AS total_transactions,
+    SUM(is_fraud) AS fraud_transactions,
+    SUM(is_fraud) / COUNT(*) AS fraud_rate
+FROM creditcard_fraud_synthetic
+GROUP BY
+    merchant_category
+ORDER BY
+    fraud_transactions DESC
+LIMIT 10;
+
+-- Q10: Which customers show the strongest behavioral red flags?
+-- Goal: Identify accounts with unusual or suspicious activity patterns.
+
+SELECT
+    customer_id,
+    AVG(num_transactions_last_1h) AS avg_txns_last_1h,
+    AVG(minutes_since_last_transaction) AS avg_minutes_between_txns,
+    AVG(distance_from_last_transaction_km) AS avg_distance_between_txns,
+    AVG(ip_address_risk_score) AS avg_ip_risk_score
+FROM creditcard_fraud_synthetic
+GROUP BY
+    customer_id
+ORDER BY
+    avg_txns_last_1h DESC,
+    avg_ip_risk_score DESC
+LIMIT 10;
