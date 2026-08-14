@@ -118,3 +118,191 @@ ORDER BY
     avg_txns_last_1h DESC,
     avg_ip_risk_score DESC
 LIMIT 10;
+
+-- Q11: Identify transactions with multiple simultaneous risk indicators.
+-- Goal: Spot transactions that combine several suspicious behaviors.
+
+SELECT
+    transaction_id,
+    customer_id,
+    amount,
+    is_night,
+    is_foreign_transaction,
+    ip_address_risk_score,
+    failed_pin_attempts_24h
+FROM creditcard_fraud_synthetic
+WHERE
+    is_night = 1
+    AND is_foreign_transaction = 1
+    AND ip_address_risk_score > 70
+    AND failed_pin_attempts_24h > 0
+ORDER BY
+    ip_address_risk_score DESC;
+
+-- Q12: Create a simple rule-based risk score using CASE WHEN logic.
+-- Goal: Assign points for suspicious behaviors.
+
+SELECT
+    transaction_id,
+    customer_id,
+    amount,
+    CASE
+        WHEN amount > 500 THEN 2
+        ELSE 0
+    END +
+    CASE
+        WHEN is_night = 1 THEN 1
+        ELSE 0
+    END +
+    CASE
+        WHEN is_foreign_transaction = 1 THEN 2
+        ELSE 0
+    END +
+    CASE
+        WHEN ip_address_risk_score > 80 THEN 3
+        ELSE 0
+    END AS risk_score
+FROM creditcard_fraud_synthetic
+ORDER BY
+    risk_score DESC
+LIMIT 20;
+
+-- Q13: Find high-risk transactions that were not labeled as fraud.
+-- Goal: Identify potential false negatives.
+
+SELECT
+    transaction_id,
+    customer_id,
+    amount,
+    is_fraud,
+    ip_address_risk_score,
+    minutes_since_last_transaction
+FROM creditcard_fraud_synthetic
+WHERE
+    is_fraud = 0
+    AND ip_address_risk_score > 85
+    AND minutes_since_last_transaction < 2
+ORDER BY
+    ip_address_risk_score DESC;
+
+-- Q14: Which customers have the highest fraud rates?
+-- Goal: Identify accounts repeatedly involved in fraud.
+
+SELECT
+    customer_id,
+    COUNT(*) AS total_transactions,
+    SUM(is_fraud) AS fraud_transactions,
+    SUM(is_fraud) / COUNT(*) AS fraud_rate
+FROM creditcard_fraud_synthetic
+GROUP BY
+    customer_id
+HAVING
+    COUNT(*) > 10
+ORDER BY
+    fraud_rate DESC
+LIMIT 20;
+
+-- Q15: Identify merchants with unusually high fraud rates.
+-- Goal: Detect merchant-level fraud patterns.
+
+SELECT
+    merchant_id,
+    merchant_category,
+    COUNT(*) AS total_transactions,
+    SUM(is_fraud) AS fraud_transactions,
+    SUM(is_fraud) / COUNT(*) AS fraud_rate
+FROM creditcard_fraud_synthetic
+GROUP BY
+    merchant_id, merchant_category
+HAVING
+    COUNT(*) > 20
+ORDER BY
+    fraud_rate DESC
+LIMIT 20;
+
+-- Q16: Rank transactions by risk using window functions.
+-- Goal: Produce a prioritized list of suspicious transactions.
+
+SELECT
+    transaction_id,
+    customer_id,
+    amount,
+    ip_address_risk_score,
+    ROW_NUMBER() OVER (
+        ORDER BY ip_address_risk_score DESC, amount DESC
+    ) AS risk_rank
+FROM creditcard_fraud_synthetic
+LIMIT 20;
+
+-- Q17: Identify rapid-fire transaction bursts.
+-- Goal: Detect suspicious high-frequency activity.
+
+SELECT
+    transaction_id,
+    customer_id,
+    num_transactions_last_1h,
+    minutes_since_last_transaction,
+    amount
+FROM creditcard_fraud_synthetic
+WHERE
+    num_transactions_last_1h > 5
+    AND minutes_since_last_transaction < 3
+ORDER BY
+    num_transactions_last_1h DESC;
+
+-- Q18: Identify transactions with large geographic jumps.
+-- Goal: Detect location-based anomalies.
+
+SELECT
+    transaction_id,
+    customer_id,
+    distance_from_home_km,
+    distance_from_last_transaction_km,
+    is_fraud
+FROM creditcard_fraud_synthetic
+WHERE
+    distance_from_home_km > 50
+    AND distance_from_last_transaction_km > 20
+ORDER BY
+    distance_from_last_transaction_km DESC;
+
+-- Q19: Build a combined behavioral + monetary risk score.
+-- Goal: Create a more complete risk scoring model.
+
+SELECT
+    transaction_id,
+    customer_id,
+    amount,
+    num_transactions_last_1h,
+    ip_address_risk_score,
+    (
+        CASE WHEN amount > 500 THEN 2 ELSE 0 END +
+        CASE WHEN num_transactions_last_1h > 3 THEN 2 ELSE 0 END +
+        CASE WHEN ip_address_risk_score > 80 THEN 3 ELSE 0 END +
+        CASE WHEN is_foreign_transaction = 1 THEN 2 ELSE 0 END
+    ) AS combined_risk_score
+FROM creditcard_fraud_synthetic
+ORDER BY
+    combined_risk_score DESC
+LIMIT 20;
+
+-- Q20: Identify the top 20 riskiest customers.
+-- Goal: Produce a final prioritized customer risk list.
+
+SELECT
+    customer_id,
+    AVG(amount) AS avg_amount,
+    AVG(ip_address_risk_score) AS avg_ip_risk,
+    AVG(num_transactions_last_1h) AS avg_txn_bursts,
+    SUM(is_fraud) AS total_fraud_events,
+    (
+        AVG(ip_address_risk_score) * 0.4 +
+        AVG(num_transactions_last_1h) * 0.3 +
+        SUM(is_fraud) * 0.3
+    ) AS customer_risk_score
+FROM creditcard_fraud_synthetic
+GROUP BY
+    customer_id
+ORDER BY
+    customer_risk_score DESC
+LIMIT 20;
