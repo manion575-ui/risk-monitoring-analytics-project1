@@ -1,0 +1,1 @@
+The original query did not come back with any results. After reviewing the raw Excel data, it looked like there was not enough transactions per customer id to generate 10+ transactions. I lowered it to 5, but the fraud rate is 0 for customer 32430. Lowering the threshold further will produce more results with actual fraud rates associated with the customer ids.  
